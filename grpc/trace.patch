@@ -1,0 +1,76 @@
+diff -ur examples/route_guide/client/client.go examples.patched/route_guide/client/client.go
+--- examples/route_guide/client/client.go	2022-05-25 13:06:34.000000000 -0400
++++ examples.patched/route_guide/client/client.go	2022-05-25 16:34:12.000000000 -0400
+@@ -30,6 +30,8 @@
+ 	"math/rand"
+ 	"time"
+ 
++	"github.com/equinix-labs/otel-init-go/otelinit"
++	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+ 	"google.golang.org/grpc"
+ 	"google.golang.org/grpc/credentials"
+ 	"google.golang.org/grpc/credentials/insecure"
+@@ -153,6 +155,9 @@
+ }
+ 
+ func main() {
++	ctx := context.Background()
++	ctx, otelShutdown := otelinit.InitOpenTelemetry(ctx, "route_client")
++	defer otelShutdown(ctx)
+ 	flag.Parse()
+ 	var opts []grpc.DialOption
+ 	if *tls {
+@@ -168,6 +173,9 @@
+ 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+ 	}
+ 
++	// setup OpenTelemetry autoinstrumentation automatically on the gRPC client
++	opts = append(opts, grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()))
++
+ 	conn, err := grpc.Dial(*serverAddr, opts...)
+ 	if err != nil {
+ 		log.Fatalf("fail to dial: %v", err)
+diff -ur examples/route_guide/server/server.go examples.patched/route_guide/server/server.go
+--- examples/route_guide/server/server.go	2022-05-25 13:06:34.000000000 -0400
++++ examples.patched/route_guide/server/server.go	2022-05-25 16:41:19.000000000 -0400
+@@ -35,13 +35,16 @@
+ 	"sync"
+ 	"time"
+ 
+-	"google.golang.org/grpc"
++	"github.com/equinix-labs/otel-init-go/otelinit"
++	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
++	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+ 
+-	"google.golang.org/grpc/credentials"
+-	"google.golang.org/grpc/examples/data"
++	"google.golang.org/grpc"
+ 
+ 	"github.com/golang/protobuf/proto"
+ 
++	"google.golang.org/grpc/credentials"
++	"google.golang.org/grpc/examples/data"
+ 	pb "google.golang.org/grpc/examples/route_guide/routeguide"
+ )
+ 
+@@ -223,6 +226,7 @@
+ 	if err != nil {
+ 		log.Fatalf("failed to listen: %v", err)
+ 	}
++
+ 	var opts []grpc.ServerOption
+ 	if *tls {
+ 		if *certFile == "" {
+@@ -237,6 +241,12 @@
+ 		}
+ 		opts = []grpc.ServerOption{grpc.Creds(creds)}
+ 	}
++	opts = append(opts, grpc_middleware.WithUnaryServerChain(otelgrpc.UnaryServerInterceptor()))
++
++	ctx := context.Background()
++	ctx, otelShutdown := otelinit.InitOpenTelemetry(ctx, "route_server")
++	defer otelShutdown(ctx)
++
+ 	grpcServer := grpc.NewServer(opts...)
+ 	pb.RegisterRouteGuideServer(grpcServer, newServer())
+ 	grpcServer.Serve(lis)
