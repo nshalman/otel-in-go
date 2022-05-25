@@ -1,0 +1,33 @@
+---
+receivers:
+  otlp:
+    protocols:
+      grpc:
+
+exporters:
+  logging:
+    logLevel: debug
+  jaeger:
+    endpoint: "jaeger:14250"
+    tls:
+      insecure: true
+  otlp:
+    endpoint: "api.honeycomb.io:443"
+    headers:
+      x-honeycomb-team: ${HONEYCOMB_TEAM}
+      x-honeycomb-dataset: ${HONEYCOMB_DATASET}
+
+processors:
+  batch:
+
+service:
+  pipelines:
+    traces:
+      receivers:
+        - otlp
+      processors:
+        - batch
+      exporters:
+        - jaeger
+        - logging
+        - otlp
