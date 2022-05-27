@@ -143,6 +143,8 @@ Basically
 # Adding tracing to GRPC services
 ## Tracing an example GRPC service
 
+Take the [GRPC Route Guide example](https://github.com/grpc/grpc-go/tree/master/examples/route_guide)
+
 - Add otel-init-go
 - otelinit.InitOpenTelemetry
 - Add otelgrpc.UnaryClientInterceptor
