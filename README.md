@@ -1,12 +1,10 @@
 # OpenTelemetry in golang
 
-### Honeycomb
+### Jaeger
 
-Create a .env file containing these lines with correct values filled in
+Bring up the Jaeger all-in-one with OTLP support:
 ```
-HONEYCOMB_TEAM=
-HONEYCOMB_DATASET=
-HONEYCOMB_COMPANY=
+docker compose up -d
 ```
 
 ### direnv
