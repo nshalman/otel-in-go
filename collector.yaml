@@ -1,0 +1,37 @@
+---
+receivers:
+  fluentforward:
+    endpoint: 0.0.0.0:8006
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+exporters:
+  file/logs:
+    path: /otel-logs/logs.json
+    append: true
+  file/traces:
+    path: /otel-logs/traces.json
+    append: true
+  otlp/jaeger:
+    endpoint: "jaeger:4317"
+    tls:
+      insecure: true
+
+processors:
+  batch:
+
+service:
+  pipelines:
+    logs:
+      receivers:
+        - fluentforward
+      exporters:
+        - file/logs
+    traces:
+      receivers:
+        - otlp
+      exporters:
+        - otlp/jaeger
+        - file/traces

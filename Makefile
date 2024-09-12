@@ -1,8 +1,9 @@
 default: collector
 
 collector:
-	docker compose up -d
+	mkdir -p logs
+	chmod 777 logs
+	docker compose up -d --build
 
 browser:
 	open http://localhost:16686/
-	open https://ui.honeycomb.io/${HONEYCOMB_COMPANY?}/datasets/${HONEYCOMB_DATASET?}/home

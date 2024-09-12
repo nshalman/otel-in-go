@@ -1,22 +1,18 @@
 ---
-version: "2.1"
 services:
-  jaeger:
-    image: jaegertracing/all-in-one:latest
-    ports:
-      - 16686:16686
-      - 14268
-      - 14250
-
   otel-collector:
-    image: otel/opentelemetry-collector:local-jaeger-and-honeycomb
-    build:
-      dockerfile: Dockerfile
+    image: otel/opentelemetry-collector-contrib:latest
     command: --config /config.yaml
-    environment:
-      HONEYCOMB_TEAM: ${HONEYCOMB_TEAM?}
-      HONEYCOMB_DATASET: ${HONEYCOMB_DATASET:?}
     ports:
       - 4317:4317
-    depends_on:
-      - jaeger
+      - 8006:8006
+    volumes:
+      - ./collector.yaml:/config.yaml:ro
+      - ./logs:/otel-logs:rwz
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - 16686:16686
